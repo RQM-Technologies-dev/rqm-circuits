@@ -2,8 +2,10 @@
 
 **Canonical circuit-definition layer for the RQM Technologies quantum software stack.**
 
+[![PyPI](https://img.shields.io/pypi/v/rqm-circuits)](https://pypi.org/project/rqm-circuits/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/RQM-Technologies-dev/rqm-circuits/actions/workflows/ci.yml/badge.svg)](https://github.com/RQM-Technologies-dev/rqm-circuits/actions/workflows/ci.yml)
 
 ---
 

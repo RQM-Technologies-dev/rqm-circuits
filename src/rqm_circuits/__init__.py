@@ -36,7 +36,7 @@ from rqm_circuits.errors import (
     RQMCircuitsError,
     SerializationError,
 )
-from rqm_circuits.gates import Gate, get_gate, STANDARD_GATES
+from rqm_circuits.gates import STANDARD_GATES, Gate, get_gate
 from rqm_circuits.instructions import Instruction, make_instruction
 from rqm_circuits.ir import (
     circuit_depth,
@@ -48,6 +48,7 @@ from rqm_circuits.ir import (
 )
 from rqm_circuits.params import Parameter
 from rqm_circuits.registers import ClassicalBitRef, QubitRef
+from rqm_circuits.schema import CIRCUIT_JSON_SCHEMA, CircuitPayload
 from rqm_circuits.serialization import SCHEMA_VERSION
 from rqm_circuits.types import GateCategory
 from rqm_circuits.validators import validate_circuit, validate_instruction
@@ -89,6 +90,9 @@ __all__ = [
     "GateCategory",
     # Serialization
     "SCHEMA_VERSION",
+    # Schema
+    "CIRCUIT_JSON_SCHEMA",
+    "CircuitPayload",
     # Version
     "__version__",
 ]

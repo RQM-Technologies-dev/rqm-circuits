@@ -7,14 +7,13 @@ import json
 import pytest
 
 from rqm_circuits import (
+    SCHEMA_VERSION,
     Circuit,
     Parameter,
     SerializationError,
-    SCHEMA_VERSION,
     make_instruction,
 )
 from rqm_circuits.serialization import from_json, to_json
-
 
 # --------------------------------------------------------------------------- #
 # Circuit round-trip
@@ -147,9 +146,9 @@ class TestInstructionSerialization:
         assert "value" not in d["params"][0]
 
     def test_instruction_with_controls(self):
+        from rqm_circuits.gates import get_gate
         from rqm_circuits.instructions import Instruction
         from rqm_circuits.registers import QubitRef
-        from rqm_circuits.gates import get_gate
 
         gate = get_gate("x")
         instr = Instruction(
@@ -231,3 +230,58 @@ class TestSerializationModule:
     def test_to_json_non_serializable_raises(self):
         with pytest.raises(SerializationError):
             to_json({"key": object()})  # type: ignore[arg-type]
+
+
+# --------------------------------------------------------------------------- #
+# Determinism tests
+# --------------------------------------------------------------------------- #
+
+class TestDeterministicSerialization:
+    """Verify that to_json() produces identical output across repeated calls."""
+
+    def _make_bell(self) -> Circuit:
+        c = Circuit(num_qubits=2, name="bell")
+        c.add(make_instruction("h", [0]))
+        c.add(make_instruction("cx", [0, 1]))
+        return c
+
+    def test_to_json_identical_on_repeated_calls(self):
+        c = self._make_bell()
+        assert c.to_json() == c.to_json()
+
+    def test_to_json_keys_sorted(self):
+        c = self._make_bell()
+        data = json.loads(c.to_json())
+        top_level_keys = list(data.keys())
+        assert top_level_keys == sorted(top_level_keys)
+
+    def test_to_json_gate_keys_sorted(self):
+        c = self._make_bell()
+        data = json.loads(c.to_json())
+        for instr in data["instructions"]:
+            gate_keys = list(instr["gate"].keys())
+            assert gate_keys == sorted(gate_keys)
+
+    def test_two_identical_circuits_produce_identical_json(self):
+        c1 = self._make_bell()
+        c2 = self._make_bell()
+        assert c1.to_json() == c2.to_json()
+
+    def test_parametric_circuit_deterministic(self):
+        c = Circuit(num_qubits=1, name="rotation")
+        c.add(make_instruction("rx", [0], params=[Parameter("theta", value=1.5707963267948966)]))
+        assert c.to_json() == c.to_json()
+
+    def test_complex_circuit_round_trip_deterministic(self):
+        c = Circuit(num_qubits=3, name="complex", num_clbits=2,
+                    metadata={"author": "rqm", "version": 1})
+        c.add(make_instruction("h", [0]))
+        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("ry", [2], params=[Parameter("phi", value=0.5)]))
+        c.add(make_instruction("measure", [0], clbits=[0]))
+        c.add(make_instruction("measure", [1], clbits=[1]))
+        raw = c.to_json()
+        restored = Circuit.from_json(raw)
+        assert restored == c
+        # Round-trip JSON must also be identical.
+        assert restored.to_json() == raw
