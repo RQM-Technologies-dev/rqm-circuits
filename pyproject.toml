@@ -9,18 +9,27 @@ description = "Canonical circuit-definition layer for the RQM Technologies quant
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
-keywords = ["quantum", "circuits", "quaternion", "IR", "rqm"]
+keywords = ["quantum", "circuits", "quaternion", "IR", "rqm", "quantum computing", "gate model"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/RQM-Technologies-dev/rqm-circuits"
+Repository = "https://github.com/RQM-Technologies-dev/rqm-circuits"
+"Bug Tracker" = "https://github.com/RQM-Technologies-dev/rqm-circuits/issues"
+Changelog = "https://github.com/RQM-Technologies-dev/rqm-circuits/releases"
 
 [project.optional-dependencies]
 dev = [

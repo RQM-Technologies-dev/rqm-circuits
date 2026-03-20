@@ -45,7 +45,7 @@ def to_json(data: dict[str, Any], *, indent: int = 2) -> str:
         SerializationError: When the data cannot be serialized.
     """
     try:
-        return json.dumps(data, indent=indent, ensure_ascii=False)
+        return json.dumps(data, indent=indent, sort_keys=True, ensure_ascii=False)
     except (TypeError, ValueError) as exc:
         raise SerializationError(f"Failed to serialize circuit to JSON: {exc}") from exc
 
