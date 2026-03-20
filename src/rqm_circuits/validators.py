@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 def validate_instruction(
-    instruction: "Instruction",
+    instruction: Instruction,
     num_qubits: int,
     num_clbits: int = 0,
 ) -> None:
@@ -67,7 +67,7 @@ def validate_instruction(
         )
 
 
-def validate_circuit(circuit: "Circuit") -> None:
+def validate_circuit(circuit: Circuit) -> None:
     """Run all validation rules over an entire circuit.
 
     Args:

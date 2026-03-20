@@ -48,7 +48,7 @@ class QubitRef:
         return {"index": self.index, "type": "qubit"}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "QubitRef":
+    def from_dict(cls, data: dict[str, Any]) -> QubitRef:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
         Args:
@@ -68,7 +68,7 @@ class QubitRef:
             )
         return cls(index=idx)
 
-    def __lt__(self, other: "QubitRef") -> bool:
+    def __lt__(self, other: QubitRef) -> bool:
         return self.index < other.index
 
     def __repr__(self) -> str:
@@ -101,7 +101,7 @@ class ClassicalBitRef:
         return {"index": self.index, "type": "clbit"}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ClassicalBitRef":
+    def from_dict(cls, data: dict[str, Any]) -> ClassicalBitRef:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
         Args:
@@ -121,7 +121,7 @@ class ClassicalBitRef:
             )
         return cls(index=idx)
 
-    def __lt__(self, other: "ClassicalBitRef") -> bool:
+    def __lt__(self, other: ClassicalBitRef) -> bool:
         return self.index < other.index
 
     def __repr__(self) -> str:

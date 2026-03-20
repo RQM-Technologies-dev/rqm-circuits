@@ -7,7 +7,7 @@ and to maintain a stable public contract for downstream tooling.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 # --------------------------------------------------------------------------- #
@@ -29,7 +29,7 @@ Metadata = dict[str, Any]
 # --------------------------------------------------------------------------- #
 
 
-class GateCategory(str, Enum):
+class GateCategory(StrEnum):
     """Broad category tags used to classify gate types.
 
     These are informational and not enforced by the validation layer.

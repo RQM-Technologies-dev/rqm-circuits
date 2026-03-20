@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from rqm_circuits.instructions import Instruction
 
 
-def gate_counts(circuit: "Circuit") -> dict[str, int]:
+def gate_counts(circuit: Circuit) -> dict[str, int]:
     """Count instructions per gate name.
 
     Args:
@@ -52,7 +52,7 @@ def gate_counts(circuit: "Circuit") -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
-def circuit_depth(circuit: "Circuit") -> int:
+def circuit_depth(circuit: Circuit) -> int:
     """Compute the critical-path depth of a circuit.
 
     The depth is defined as the maximum number of instructions that must be
@@ -91,7 +91,7 @@ def circuit_depth(circuit: "Circuit") -> int:
     return max(wire_depth.values(), default=0)
 
 
-def qubit_usage(circuit: "Circuit") -> dict[int, list[int]]:
+def qubit_usage(circuit: Circuit) -> dict[int, list[int]]:
     """Return, for each qubit, the (0-based) indices of instructions that touch it.
 
     Args:
@@ -112,7 +112,7 @@ def qubit_usage(circuit: "Circuit") -> dict[int, list[int]]:
     return usage
 
 
-def has_measurements(circuit: "Circuit") -> bool:
+def has_measurements(circuit: Circuit) -> bool:
     """Return ``True`` if the circuit contains at least one measure instruction.
 
     Args:
@@ -124,7 +124,7 @@ def has_measurements(circuit: "Circuit") -> bool:
     return any(instr.gate.name == "measure" for instr in circuit.instructions)
 
 
-def is_parametric(circuit: "Circuit") -> bool:
+def is_parametric(circuit: Circuit) -> bool:
     """Return ``True`` if the circuit contains any unbound (symbolic) parameters.
 
     Args:
@@ -141,9 +141,9 @@ def is_parametric(circuit: "Circuit") -> bool:
 
 
 def filter_by_category(
-    circuit: "Circuit",
+    circuit: Circuit,
     category: GateCategory,
-) -> list["Instruction"]:
+) -> list[Instruction]:
     """Return all instructions whose gate belongs to ``category``.
 
     Args:

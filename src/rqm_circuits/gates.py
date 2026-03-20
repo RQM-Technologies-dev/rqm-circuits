@@ -96,7 +96,7 @@ class Gate:
         return d
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Gate":
+    def from_dict(cls, data: dict[str, Any]) -> Gate:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
         Args:
