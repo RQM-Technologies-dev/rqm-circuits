@@ -8,14 +8,13 @@ from rqm_circuits import (
     Circuit,
     CircuitValidationError,
     Parameter,
-    make_instruction,
     circuit_depth,
     gate_counts,
     has_measurements,
     is_parametric,
+    make_instruction,
     qubit_usage,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Construction

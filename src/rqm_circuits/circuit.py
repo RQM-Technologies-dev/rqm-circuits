@@ -78,7 +78,7 @@ class Circuit:
     # Mutation helpers
     # ------------------------------------------------------------------ #
 
-    def add(self, instruction: Instruction) -> "Circuit":
+    def add(self, instruction: Instruction) -> Circuit:
         """Append a single instruction and validate it against the circuit.
 
         Args:
@@ -106,14 +106,14 @@ class Circuit:
         self.instructions.append(instruction)
         return self
 
-    def append(self, instruction: Instruction) -> "Circuit":
+    def append(self, instruction: Instruction) -> Circuit:
         """Alias for :meth:`add`.
 
         Provided for API symmetry with other quantum frameworks.
         """
         return self.add(instruction)
 
-    def extend(self, instructions: list[Instruction]) -> "Circuit":
+    def extend(self, instructions: list[Instruction]) -> Circuit:
         """Append multiple instructions in order.
 
         Args:
@@ -130,7 +130,7 @@ class Circuit:
     # Copy
     # ------------------------------------------------------------------ #
 
-    def copy(self) -> "Circuit":
+    def copy(self) -> Circuit:
         """Return a deep copy of this circuit.
 
         Returns:
@@ -177,7 +177,7 @@ class Circuit:
         return d
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Circuit":
+    def from_dict(cls, data: dict[str, Any]) -> Circuit:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
         Args:
@@ -224,7 +224,7 @@ class Circuit:
         return to_json(self.to_dict(), indent=indent)
 
     @classmethod
-    def from_json(cls, raw: str) -> "Circuit":
+    def from_json(cls, raw: str) -> Circuit:
         """Deserialize from a JSON string produced by :meth:`to_json`.
 
         Args:

@@ -16,7 +16,6 @@ from rqm_circuits.gates import get_gate
 from rqm_circuits.instructions import Instruction
 from rqm_circuits.registers import QubitRef
 
-
 # --------------------------------------------------------------------------- #
 # Qubit index validation
 # --------------------------------------------------------------------------- #

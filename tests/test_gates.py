@@ -7,13 +7,12 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from rqm_circuits import (
+    STANDARD_GATES,
     Gate,
     GateCategory,
     GateDefinitionError,
-    STANDARD_GATES,
     get_gate,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Standard gate registry

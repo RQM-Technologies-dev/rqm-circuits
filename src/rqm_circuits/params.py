@@ -74,7 +74,7 @@ class Parameter:
             raise ValueError(f"Parameter '{self.name}' is symbolic and has no concrete value.")
         return self.value
 
-    def bind(self, value: float) -> "Parameter":
+    def bind(self, value: float) -> Parameter:
         """Return a new :class:`Parameter` with the given value bound.
 
         Args:
@@ -101,7 +101,7 @@ class Parameter:
         return d
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Parameter":
+    def from_dict(cls, data: dict[str, Any]) -> Parameter:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
         Args:

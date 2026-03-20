@@ -84,12 +84,11 @@ class Instruction:
         gate = self.gate
 
         # Barrier is a special directive with variable target count.
-        if not gate.allows_barrier:
-            if len(self.targets) != gate.arity:
-                raise InstructionError(
-                    f"Gate '{gate.name}' has arity {gate.arity} but "
-                    f"{len(self.targets)} target(s) were supplied."
-                )
+        if not gate.allows_barrier and len(self.targets) != gate.arity:
+            raise InstructionError(
+                f"Gate '{gate.name}' has arity {gate.arity} but "
+                f"{len(self.targets)} target(s) were supplied."
+            )
 
         if len(self.params) != gate.num_params:
             raise InstructionError(
@@ -147,7 +146,7 @@ class Instruction:
         return d
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Instruction":
+    def from_dict(cls, data: dict[str, Any]) -> Instruction:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
         Args:
