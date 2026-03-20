@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import FrozenInstanceError
+
 import pytest
 
 from rqm_circuits import (
@@ -116,7 +118,7 @@ class TestGateConstruction:
 
     def test_gate_immutable(self):
         g = Gate(name="h", arity=1)
-        with pytest.raises(Exception):
+        with pytest.raises(FrozenInstanceError):
             g.name = "x"  # type: ignore[misc]
 
 

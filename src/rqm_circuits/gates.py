@@ -294,8 +294,8 @@ def get_gate(name: str) -> Gate:
     """
     try:
         return STANDARD_GATES[name]
-    except KeyError:
+    except KeyError as exc:
         raise GateDefinitionError(
             f"Unknown gate {name!r}.  "
             f"Available gates: {sorted(STANDARD_GATES)}"
-        )
+        ) from exc
