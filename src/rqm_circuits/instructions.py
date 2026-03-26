@@ -27,6 +27,43 @@ from rqm_circuits.params import Parameter
 from rqm_circuits.registers import ClassicalBitRef, QubitRef
 from rqm_circuits.types import Metadata
 
+# Legacy parameter names that are normalized to the canonical name for
+# single-parameter rotation gates (rx, ry, rz, phaseshift).
+_LEGACY_ANGLE_NAMES: frozenset[str] = frozenset({"theta", "phi"})
+
+
+def _normalize_params(
+    params: tuple[Parameter, ...],
+    gate: Gate,
+) -> tuple[Parameter, ...]:
+    """Normalize legacy parameter names to canonical names.
+
+    For single-parameter rotation gates (where ``gate.param_names == ("angle",)``),
+    the names ``"theta"`` and ``"phi"`` are accepted as legacy aliases and
+    silently renamed to ``"angle"``.
+
+    Args:
+        params: The parameter tuple to normalize.
+        gate: The gate definition providing canonical param_names.
+
+    Returns:
+        A (possibly new) tuple of parameters with normalized names.
+    """
+    if not gate.param_names:
+        return params
+    normalized: list[Parameter] = []
+    changed = False
+    for i, param in enumerate(params):
+        if i < len(gate.param_names):
+            canonical = gate.param_names[i]
+            is_legacy = param.name in _LEGACY_ANGLE_NAMES and canonical == "angle"
+            if param.name != canonical and is_legacy:
+                normalized.append(Parameter(name=canonical, value=param.value))
+                changed = True
+                continue
+        normalized.append(param)
+    return tuple(normalized) if changed else params
+
 
 @dataclass(frozen=True)
 class Instruction:
@@ -38,12 +75,17 @@ class Instruction:
             objects.  Length must equal ``gate.arity`` unless the gate is a
             barrier directive.
         controls: Optional list of control
-            :class:`~rqm_circuits.registers.QubitRef` objects.  Must not
-            overlap with ``targets``.
+            :class:`~rqm_circuits.registers.QubitRef` objects.  Length must
+            equal ``gate.num_controls`` for gates that declare a non-zero
+            ``num_controls``.  Must not overlap with ``targets``.
         params: Ordered list of :class:`~rqm_circuits.params.Parameter` objects.
-            Length must equal ``gate.num_params``.
+            Length must equal ``gate.num_params``.  Parameter names are
+            validated against ``gate.param_names`` when the gate declares them;
+            legacy names (``"theta"``, ``"phi"``) are normalized to ``"angle"``
+            for single-parameter rotation gates.
         clbits: Optional list of classical bit references used for measurement
-            results.
+            results.  Required for ``measure`` instructions; forbidden for all
+            other gate instructions.
         label: Optional human-readable label for the instruction.
         metadata: Optional metadata mapping.
 
@@ -54,6 +96,10 @@ class Instruction:
         >>> instr = Instruction(gate=h, targets=[QubitRef(0)])
         >>> instr.gate.name
         'h'
+        >>> cx = get_gate("cx")
+        >>> bell = Instruction(gate=cx, targets=[QubitRef(1)], controls=[QubitRef(0)])
+        >>> bell.gate.name
+        'cx'
     """
 
     gate: Gate
@@ -72,6 +118,8 @@ class Instruction:
         object.__setattr__(self, "clbits", tuple(self.clbits))
         # Freeze metadata too.
         object.__setattr__(self, "metadata", dict(self.metadata))
+        # Normalize legacy parameter names before validation.
+        object.__setattr__(self, "params", _normalize_params(self.params, self.gate))
         self._validate()
 
     def _validate(self) -> None:
@@ -90,11 +138,29 @@ class Instruction:
                 f"{len(self.targets)} target(s) were supplied."
             )
 
+        # Validate control qubit count for controlled gates.
+        if gate.num_controls > 0 and len(self.controls) != gate.num_controls:
+            raise InstructionError(
+                f"Gate '{gate.name}' requires {gate.num_controls} control qubit(s) but "
+                f"{len(self.controls)} were supplied."
+            )
+
         if len(self.params) != gate.num_params:
             raise InstructionError(
                 f"Gate '{gate.name}' expects {gate.num_params} parameter(s) but "
                 f"{len(self.params)} were supplied."
             )
+
+        # Validate parameter names against canonical param_names when declared.
+        if gate.param_names:
+            for i, (param, expected_name) in enumerate(
+                zip(self.params, gate.param_names, strict=True)
+            ):
+                if param.name != expected_name:
+                    raise InstructionError(
+                        f"Gate '{gate.name}' expects parameter {i} to be named "
+                        f"'{expected_name}', got '{param.name}'."
+                    )
 
         # Duplicate targets are not allowed.
         seen_targets = set(q.index for q in self.targets)
@@ -149,6 +215,16 @@ class Instruction:
     def from_dict(cls, data: dict[str, Any]) -> Instruction:
         """Deserialize from a dictionary produced by :meth:`to_dict`.
 
+        Supports backward-compatible deserialization of the legacy
+        controlled-gate encoding.  In the legacy (schema 0.1) format, ``cx``,
+        ``cy``, and ``cz`` were encoded as arity-2 gates with both the control
+        and target in the ``targets`` list (first element = control).  This
+        method detects and normalizes that format automatically.
+
+        Legacy parameter name aliases (``"theta"`` / ``"phi"`` → ``"angle"``)
+        for single-parameter rotation gates are also normalized here before the
+        :class:`Instruction` object is constructed.
+
         Args:
             data: Dictionary representation of an instruction.
 
@@ -190,6 +266,20 @@ class Instruction:
             raise SerializationError(
                 f"Failed to deserialize instruction fields: {exc}"
             ) from exc
+
+        # ----------------------------------------------------------------- #
+        # Backward-compatible normalization for controlled gates (schema 0.1)
+        # ----------------------------------------------------------------- #
+        # Old encoding for cx/cy/cz: arity=2 gate with both control and target
+        # in the targets list (targets[0]=control, targets[1]=target).
+        # New encoding: arity=1, num_controls=1, controls=[ctrl], targets=[tgt].
+        if (
+            gate.num_controls > 0
+            and not controls
+            and len(targets) == gate.arity + gate.num_controls
+        ):
+            controls = targets[: gate.num_controls]
+            targets = targets[gate.num_controls :]
 
         return cls(
             gate=gate,
@@ -238,7 +328,8 @@ def make_instruction(
     Args:
         gate_name: Name of a gate in the standard registry.
         targets: List of target qubit indices.
-        controls: Optional list of control qubit indices.
+        controls: Optional list of control qubit indices.  For controlled gates
+            (``cx``, ``cy``, ``cz``), supply exactly one control index here.
         params: Optional list of :class:`~rqm_circuits.params.Parameter` objects.
         clbits: Optional list of classical bit indices.
         label: Optional label.
@@ -256,7 +347,8 @@ def make_instruction(
         >>> instr = make_instruction("h", targets=[0])
         >>> instr.gate.name
         'h'
-        >>> instr = make_instruction("cx", targets=[0, 1])
+        >>> # For controlled gates, supply controls separately:
+        >>> instr = make_instruction("cx", targets=[1], controls=[0])
         >>> instr.gate.name
         'cx'
     """

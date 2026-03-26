@@ -7,18 +7,30 @@ and backend adapter layers.
 
 Stack position
 --------------
-- ``rqm-core``       – quaternion/math foundation
-- **``rqm-circuits``** – canonical circuit language / IR  ← you are here
-- ``rqm-compiler``   – optimization and rewriting engine
-- backend repos      – translation/execution bridges
-- future hosted API  – circuit ingestion, analysis, optimization, export
+::
+
+    rqm-core        – quaternion/math foundation
+    rqm-circuits    – canonical circuit language / IR  ← you are here
+    rqm-compiler    – internal optimization / canonicalization engine
+    rqm-qiskit      – Qiskit translation/execution bridge
+    rqm-braket      – Amazon Braket translation/execution bridge
+    rqm-api/Studio  – hosted API and Studio frontend
+
+Key design principles:
+
+- **rqm-circuits = canonical external circuit IR**.  API payloads and Studio
+  traffic use rqm-circuits as the wire format.
+- **rqm-compiler = internal engine**.  Compiler descriptors are internal;
+  they are not the public API payload.
+- Lightweight and backend-neutral: no dependency on Qiskit, Braket, or
+  rqm-compiler.
 
 Quick start
 -----------
->>> from rqm_circuits import Circuit, make_instruction
+>>> from rqm_circuits import Circuit, make_instruction, Parameter
 >>> c = Circuit(num_qubits=2, name="bell")
 >>> c.add(make_instruction("h", [0]))
->>> c.add(make_instruction("cx", [0, 1]))
+>>> c.add(make_instruction("cx", targets=[1], controls=[0]))
 >>> print(c.summary())
 
 Public API
@@ -27,6 +39,8 @@ All stable public symbols are re-exported from this top-level module.
 """
 
 from __future__ import annotations
+
+from importlib.metadata import PackageNotFoundError, version
 
 from rqm_circuits.circuit import Circuit
 from rqm_circuits.errors import (
@@ -53,7 +67,10 @@ from rqm_circuits.serialization import SCHEMA_VERSION
 from rqm_circuits.types import GateCategory
 from rqm_circuits.validators import validate_circuit, validate_instruction
 
-__version__ = "0.1.0"
+try:
+    __version__ = version("rqm-circuits")
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
 
 __all__ = [
     # Circuit
