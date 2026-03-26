@@ -59,12 +59,26 @@ def validate_instruction(
                 f"bit(s) (valid indices: 0–{max(0, num_clbits - 1)})."
             )
 
-    # 3. Measure gate must have exactly one classical bit target.
-    if gate.name == "measure" and len(instruction.clbits) != 1:
-        raise CircuitValidationError(
-            f"Measure instruction must have exactly 1 classical bit target, "
-            f"got {len(instruction.clbits)}."
-        )
+    # 3. Measure gate must have exactly one qubit target and one classical bit.
+    if gate.name == "measure":
+        if len(instruction.targets) != 1:
+            raise CircuitValidationError(
+                f"Measure instruction must have exactly 1 qubit target, "
+                f"got {len(instruction.targets)}."
+            )
+        if len(instruction.clbits) != 1:
+            raise CircuitValidationError(
+                f"Measure instruction must have exactly 1 classical bit target, "
+                f"got {len(instruction.clbits)}."
+            )
+    else:
+        # 4. Non-measure gates must not carry classical bits.
+        if instruction.clbits:
+            raise CircuitValidationError(
+                f"Gate '{gate.name}' is not a measurement but carries "
+                f"{len(instruction.clbits)} classical bit reference(s).  "
+                "Only 'measure' instructions may reference classical bits."
+            )
 
 
 def validate_circuit(circuit: Circuit) -> None:

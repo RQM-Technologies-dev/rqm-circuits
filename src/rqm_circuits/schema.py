@@ -73,9 +73,11 @@ class ParameterPayload(TypedDict, total=False):
 class GatePayload(TypedDict, total=False):
     """JSON representation of a gate definition."""
 
-    name: str        # required
-    arity: int       # required
-    num_params: int  # optional, default 0
+    name: str           # required
+    arity: int          # required
+    num_params: int     # optional, default 0
+    num_controls: int   # optional, default 0
+    param_names: list[str]  # optional – canonical parameter names
     categories: list[str]   # optional
     description: str        # optional
     quaternion_form: str    # optional
@@ -101,7 +103,7 @@ class CircuitPayload(TypedDict, total=False):
     :data:`CIRCUIT_JSON_SCHEMA`.
     """
 
-    schema_version: str          # required – e.g. "0.1"
+    schema_version: str          # required – e.g. "0.2"
     num_qubits: int              # required
     instructions: list[InstructionPayload]  # required (may be empty)
     name: str                    # optional
@@ -130,9 +132,9 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
     "properties": {
         "schema_version": {
             "type": "string",
-            "description": "Schema version string.  Must be '0.1' for this release.",
-            "enum": ["0.1"],
-            "examples": ["0.1"],
+            "description": "Schema version. '0.2' for this release; '0.1' accepted as legacy.",
+            "enum": ["0.1", "0.2"],
+            "examples": ["0.2"],
         },
         "num_qubits": {
             "type": "integer",
@@ -218,8 +220,8 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
                 "name": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Parameter name (e.g. 'theta', 'phi').",
-                    "examples": ["theta"],
+                    "description": "Parameter name (e.g. 'angle').  Names are gate-specific.",
+                    "examples": ["angle"],
                 },
                 "value": {
                     "type": "number",
@@ -238,21 +240,45 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
                 "name": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Canonical gate name (e.g. 'h', 'cx', 'rx').",
-                    "examples": ["h", "cx", "rx"],
+                    "description": (
+                        "Canonical gate name (e.g. 'h', 'cx', 'rx', 'phaseshift', 'u1q')."
+                    ),
+                    "examples": ["h", "cx", "rx", "phaseshift", "u1q"],
                 },
                 "arity": {
                     "type": "integer",
                     "minimum": 0,
-                    "description": "Number of target qubits.",
-                    "examples": [1, 2],
+                    "description": (
+                        "Number of target qubits.  For controlled gates (cx, cy, cz) this is 1; "
+                        "the control qubit count is in num_controls."
+                    ),
+                    "examples": [1],
                 },
                 "num_params": {
                     "type": "integer",
                     "minimum": 0,
                     "default": 0,
                     "description": "Number of numeric/symbolic parameters.",
+                    "examples": [0, 1, 4],
+                },
+                "num_controls": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": (
+                        "Number of control qubits required.  1 for cx/cy/cz; "
+                        "0 for all other standard gates."
+                    ),
                     "examples": [0, 1],
+                },
+                "param_names": {
+                    "type": "array",
+                    "items": {"type": "string", "minLength": 1},
+                    "description": (
+                        "Canonical ordered parameter names.  "
+                        "Rotation gates use 'angle'; u1q uses ['w','x','y','z']."
+                    ),
+                    "examples": [["angle"], ["w", "x", "y", "z"]],
                 },
                 "categories": {
                     "type": "array",
@@ -299,20 +325,28 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
                 "targets": {
                     "type": "array",
                     "items": {"$ref": "#/$defs/QubitRef"},
-                    "description": "Ordered list of target qubits.",
-                    "examples": [[{"index": 0, "type": "qubit"}]],
+                    "description": (
+                        "Ordered list of target qubits.  For controlled gates, "
+                        "supply the target(s) here and the control(s) in 'controls'."
+                    ),
+                    "examples": [[{"index": 1, "type": "qubit"}]],
                 },
                 "controls": {
                     "type": "array",
                     "items": {"$ref": "#/$defs/QubitRef"},
-                    "description": "Optional control qubits (must not overlap with targets).",
+                    "description": (
+                        "Control qubits (must not overlap with targets).  "
+                        "Required for controlled gates (cx, cy, cz)."
+                    ),
                     "default": [],
+                    "examples": [[{"index": 0, "type": "qubit"}]],
                 },
                 "params": {
                     "type": "array",
                     "items": {"$ref": "#/$defs/Parameter"},
                     "description": (
-                        "Gate parameters.  Length must equal gate.num_params."
+                        "Gate parameters.  Length must equal gate.num_params.  "
+                        "Names must match gate.param_names when declared."
                     ),
                     "default": [],
                 },
@@ -320,7 +354,8 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
                     "type": "array",
                     "items": {"$ref": "#/$defs/ClassicalBitRef"},
                     "description": (
-                        "Classical bit targets (required for measure instructions)."
+                        "Classical bit targets (required for measure; "
+                        "forbidden for all other gates)."
                     ),
                     "default": [],
                 },

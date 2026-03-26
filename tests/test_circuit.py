@@ -75,7 +75,8 @@ class TestCircuitAdd:
         c = Circuit(num_qubits=2)
         c.extend([
             make_instruction("h", [0]),
-            make_instruction("cx", [0, 1]),
+            # cx: control=0, target=1
+            make_instruction("cx", targets=[1], controls=[0]),
         ])
         assert len(c) == 2
 
@@ -92,12 +93,14 @@ class TestCircuitAdd:
     def test_add_invalid_qubit_two_qubit_gate(self):
         c = Circuit(num_qubits=2)
         with pytest.raises(CircuitValidationError):
-            c.add(make_instruction("cx", [0, 2]))  # qubit 2 does not exist
+            # cx: control=0, target=2 – qubit 2 does not exist
+            c.add(make_instruction("cx", targets=[2], controls=[0]))
 
     def test_bell_circuit(self):
         c = Circuit(num_qubits=2, name="bell")
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        # cx: control=0, target=1
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         assert len(c) == 2
         assert c.instructions[0].gate.name == "h"
         assert c.instructions[1].gate.name == "cx"
@@ -177,23 +180,24 @@ class TestCircuitSummary:
     def test_summary_contains_gate_names(self):
         c = Circuit(num_qubits=2, name="bell")
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         s = c.summary()
         assert "h" in s
         assert "cx" in s
 
     def test_summary_with_params(self):
         c = Circuit(num_qubits=1)
-        c.add(make_instruction("rx", [0], params=[Parameter("theta", value=1.5)]))
+        c.add(make_instruction("rx", [0], params=[Parameter("angle", value=1.5)]))
         s = c.summary()
         assert "rx" in s
         assert "1.5" in s
 
     def test_summary_with_symbolic_param(self):
         c = Circuit(num_qubits=1)
-        c.add(make_instruction("rx", [0], params=[Parameter("phi")]))
+        # Use canonical param name "angle" for rx
+        c.add(make_instruction("rx", [0], params=[Parameter("angle")]))
         s = c.summary()
-        assert "phi" in s
+        assert "angle" in s
 
     def test_repr(self):
         c = Circuit(num_qubits=3, name="test")
@@ -215,7 +219,7 @@ class TestIRHelpers:
         c = Circuit(num_qubits=2)
         c.add(make_instruction("h", [0]))
         c.add(make_instruction("h", [1]))
-        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         counts = gate_counts(c)
         assert counts["h"] == 2
         assert counts["cx"] == 1
@@ -239,7 +243,7 @@ class TestIRHelpers:
     def test_circuit_depth_bell(self):
         c = Circuit(num_qubits=2)
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         assert circuit_depth(c) == 2
 
     def test_has_measurements_false(self):
@@ -254,18 +258,18 @@ class TestIRHelpers:
 
     def test_is_parametric_false(self):
         c = Circuit(num_qubits=1)
-        c.add(make_instruction("rx", [0], params=[Parameter("theta", value=1.0)]))
+        c.add(make_instruction("rx", [0], params=[Parameter("angle", value=1.0)]))
         assert not is_parametric(c)
 
     def test_is_parametric_true(self):
         c = Circuit(num_qubits=1)
-        c.add(make_instruction("rx", [0], params=[Parameter("theta")]))
+        c.add(make_instruction("rx", [0], params=[Parameter("angle")]))
         assert is_parametric(c)
 
     def test_qubit_usage(self):
         c = Circuit(num_qubits=2)
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         usage = qubit_usage(c)
         assert 0 in usage[0]
         assert 1 in usage[0]

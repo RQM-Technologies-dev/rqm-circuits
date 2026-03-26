@@ -23,13 +23,17 @@ class TestCircuitRoundTrip:
     def _make_bell(self) -> Circuit:
         c = Circuit(num_qubits=2, name="bell")
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        # cx: control=0, target=1 (new canonical format)
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         return c
 
     def test_to_dict_has_schema_version(self):
         c = Circuit(num_qubits=1)
         d = c.to_dict()
         assert d["schema_version"] == SCHEMA_VERSION
+
+    def test_schema_version_is_0_2(self):
+        assert SCHEMA_VERSION == "0.2"
 
     def test_to_dict_num_qubits(self):
         c = Circuit(num_qubits=3)
@@ -134,15 +138,17 @@ class TestInstructionSerialization:
         assert d["targets"][0]["index"] == 0
 
     def test_instruction_with_params_dict(self):
-        instr = make_instruction("rx", [0], params=[Parameter("theta", value=1.5)])
+        # Use canonical param name "angle" for rx
+        instr = make_instruction("rx", [0], params=[Parameter("angle", value=1.5)])
         d = instr.to_dict()
-        assert d["params"][0]["name"] == "theta"
+        assert d["params"][0]["name"] == "angle"
         assert d["params"][0]["value"] == pytest.approx(1.5)
 
     def test_instruction_with_symbolic_param(self):
-        instr = make_instruction("ry", [0], params=[Parameter("phi")])
+        # Use canonical param name "angle" for ry
+        instr = make_instruction("ry", [0], params=[Parameter("angle")])
         d = instr.to_dict()
-        assert d["params"][0]["name"] == "phi"
+        assert d["params"][0]["name"] == "angle"
         assert "value" not in d["params"][0]
 
     def test_instruction_with_controls(self):
@@ -160,18 +166,42 @@ class TestInstructionSerialization:
         assert d["controls"][0]["index"] == 0
         assert d["targets"][0]["index"] == 1
 
+    def test_cx_serializes_with_controls_field(self):
+        """cx instruction must serialize with targets=[tgt] and controls=[ctrl]."""
+        instr = make_instruction("cx", targets=[1], controls=[0])
+        d = instr.to_dict()
+        assert d["targets"] == [{"index": 1, "type": "qubit"}]
+        assert d["controls"] == [{"index": 0, "type": "qubit"}]
+
     def test_instruction_round_trip(self):
         from rqm_circuits.instructions import Instruction
-        instr = make_instruction("cx", [0, 1])
+        # cx: control=0, target=1
+        instr = make_instruction("cx", targets=[1], controls=[0])
         d = instr.to_dict()
         restored = Instruction.from_dict(d)
         assert restored.gate.name == "cx"
-        assert len(restored.targets) == 2
+        assert len(restored.targets) == 1
+        assert len(restored.controls) == 1
 
     def test_instruction_with_label(self):
         instr = make_instruction("h", [0], label="hadamard_on_q0")
         d = instr.to_dict()
         assert d["label"] == "hadamard_on_q0"
+
+    def test_legacy_cx_format_normalized_on_deserialization(self):
+        """Legacy schema 0.1 cx format (arity=2, 2 targets, no controls) is normalized."""
+        from rqm_circuits.instructions import Instruction
+
+        legacy_dict = {
+            "gate": {"name": "cx", "arity": 2, "num_params": 0, "categories": []},
+            "targets": [{"index": 0, "type": "qubit"}, {"index": 1, "type": "qubit"}],
+        }
+        instr = Instruction.from_dict(legacy_dict)
+        assert instr.gate.name == "cx"
+        assert len(instr.targets) == 1
+        assert len(instr.controls) == 1
+        assert instr.controls[0].index == 0
+        assert instr.targets[0].index == 1
 
 
 # --------------------------------------------------------------------------- #
@@ -180,24 +210,24 @@ class TestInstructionSerialization:
 
 class TestParameterSerialization:
     def test_concrete_to_dict(self):
-        p = Parameter("theta", value=3.14)
+        p = Parameter("angle", value=3.14)
         d = p.to_dict()
-        assert d == {"name": "theta", "value": 3.14}
+        assert d == {"name": "angle", "value": 3.14}
 
     def test_symbolic_to_dict(self):
-        p = Parameter("phi")
+        p = Parameter("angle")
         d = p.to_dict()
-        assert d == {"name": "phi"}
+        assert d == {"name": "angle"}
         assert "value" not in d
 
     def test_round_trip_concrete(self):
-        p = Parameter("theta", value=1.5707963267948966)
+        p = Parameter("angle", value=1.5707963267948966)
         d = p.to_dict()
         restored = Parameter.from_dict(d)
         assert restored == p
 
     def test_round_trip_symbolic(self):
-        p = Parameter("phi")
+        p = Parameter("angle")
         d = p.to_dict()
         restored = Parameter.from_dict(d)
         assert restored == p
@@ -209,7 +239,7 @@ class TestParameterSerialization:
 
     def test_from_dict_invalid_value_raises(self):
         with pytest.raises(SerializationError):
-            Parameter.from_dict({"name": "theta", "value": "not_a_number"})
+            Parameter.from_dict({"name": "angle", "value": "not_a_number"})
 
 
 # --------------------------------------------------------------------------- #
@@ -231,6 +261,25 @@ class TestSerializationModule:
         with pytest.raises(SerializationError):
             to_json({"key": object()})  # type: ignore[arg-type]
 
+    def test_from_json_accepts_schema_0_1_legacy(self):
+        """Schema 0.1 payloads are accepted (legacy compatibility)."""
+        payload = json.dumps({
+            "schema_version": "0.1",
+            "num_qubits": 1,
+            "instructions": [],
+        })
+        data = from_json(payload)
+        assert data["num_qubits"] == 1
+
+    def test_from_json_accepts_schema_0_2(self):
+        payload = json.dumps({
+            "schema_version": "0.2",
+            "num_qubits": 1,
+            "instructions": [],
+        })
+        data = from_json(payload)
+        assert data["schema_version"] == "0.2"
+
 
 # --------------------------------------------------------------------------- #
 # Determinism tests
@@ -242,7 +291,7 @@ class TestDeterministicSerialization:
     def _make_bell(self) -> Circuit:
         c = Circuit(num_qubits=2, name="bell")
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         return c
 
     def test_to_json_identical_on_repeated_calls(self):
@@ -269,15 +318,15 @@ class TestDeterministicSerialization:
 
     def test_parametric_circuit_deterministic(self):
         c = Circuit(num_qubits=1, name="rotation")
-        c.add(make_instruction("rx", [0], params=[Parameter("theta", value=1.5707963267948966)]))
+        c.add(make_instruction("rx", [0], params=[Parameter("angle", value=1.5707963267948966)]))
         assert c.to_json() == c.to_json()
 
     def test_complex_circuit_round_trip_deterministic(self):
         c = Circuit(num_qubits=3, name="complex", num_clbits=2,
                     metadata={"author": "rqm", "version": 1})
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
-        c.add(make_instruction("ry", [2], params=[Parameter("phi", value=0.5)]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
+        c.add(make_instruction("ry", [2], params=[Parameter("angle", value=0.5)]))
         c.add(make_instruction("measure", [0], clbits=[0]))
         c.add(make_instruction("measure", [1], clbits=[1]))
         raw = c.to_json()

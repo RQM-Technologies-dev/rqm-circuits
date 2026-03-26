@@ -1,4 +1,4 @@
-"""Tests for the Circuit JSON schema (Task 5 – FastAPI endpoint readiness)."""
+"""Tests for the Circuit JSON schema."""
 
 from __future__ import annotations
 
@@ -49,8 +49,11 @@ class TestCircuitJsonSchema:
     def test_schema_defines_parameter(self):
         assert "Parameter" in CIRCUIT_JSON_SCHEMA["$defs"]
 
-    def test_schema_version_enum(self):
-        """schema_version must be an enum containing at least "0.1"."""
+    def test_schema_version_enum_includes_0_2(self):
+        prop = CIRCUIT_JSON_SCHEMA["properties"]["schema_version"]
+        assert "0.2" in prop["enum"]
+
+    def test_schema_version_enum_includes_legacy_0_1(self):
         prop = CIRCUIT_JSON_SCHEMA["properties"]["schema_version"]
         assert "0.1" in prop["enum"]
 
@@ -64,6 +67,14 @@ class TestCircuitJsonSchema:
         for expected in ("clifford", "rotation", "single_qubit", "two_qubit",
                          "measurement", "directive", "non_clifford"):
             assert expected in enum
+
+    def test_gate_schema_has_num_controls(self):
+        gate_props = CIRCUIT_JSON_SCHEMA["$defs"]["Gate"]["properties"]
+        assert "num_controls" in gate_props
+
+    def test_gate_schema_has_param_names(self):
+        gate_props = CIRCUIT_JSON_SCHEMA["$defs"]["Gate"]["properties"]
+        assert "param_names" in gate_props
 
     def test_schema_is_json_serializable(self):
         """The schema dict must itself be JSON-serialisable."""
@@ -79,9 +90,7 @@ class TestCircuitJsonSchema:
 class TestSchemaValidatesPayloads:
     """Use jsonschema (if available) to validate real circuit payloads.
 
-    These tests are skipped gracefully if jsonschema is not installed,
-    since it is an optional dev dependency.  They serve as integration
-    tests for the schema definition itself.
+    These tests are skipped gracefully if jsonschema is not installed.
     """
 
     @pytest.fixture(autouse=True)
@@ -95,7 +104,8 @@ class TestSchemaValidatesPayloads:
     def test_bell_circuit_validates(self):
         c = Circuit(num_qubits=2, name="bell")
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        # cx with explicit controls+targets
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         self._validate(c.to_dict())
 
     def test_empty_circuit_validates(self):
@@ -104,12 +114,17 @@ class TestSchemaValidatesPayloads:
 
     def test_parametric_circuit_validates(self):
         c = Circuit(num_qubits=1)
-        c.add(make_instruction("rx", [0], params=[Parameter("theta", value=1.5)]))
+        c.add(make_instruction("rx", [0], params=[Parameter("angle", value=1.5)]))
         self._validate(c.to_dict())
 
     def test_symbolic_parameter_validates(self):
         c = Circuit(num_qubits=1)
-        c.add(make_instruction("rz", [0], params=[Parameter("phi")]))
+        c.add(make_instruction("rz", [0], params=[Parameter("angle")]))
+        self._validate(c.to_dict())
+
+    def test_phaseshift_circuit_validates(self):
+        c = Circuit(num_qubits=1)
+        c.add(make_instruction("phaseshift", [0], params=[Parameter("angle", value=0.5)]))
         self._validate(c.to_dict())
 
     def test_measurement_circuit_validates(self):
@@ -135,7 +150,7 @@ class TestSchemaValidatesPayloads:
     def test_negative_num_qubits_fails(self):
         import jsonschema
         payload = {
-            "schema_version": "0.1",
+            "schema_version": "0.2",
             "num_qubits": -1,
             "instructions": [],
         }
@@ -145,7 +160,7 @@ class TestSchemaValidatesPayloads:
     def test_unknown_top_level_field_fails(self):
         import jsonschema
         payload = {
-            "schema_version": "0.1",
+            "schema_version": "0.2",
             "num_qubits": 1,
             "instructions": [],
             "unknown_field": "value",

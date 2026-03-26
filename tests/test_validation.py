@@ -54,7 +54,7 @@ class TestQubitIndexValidation:
 class TestDuplicateTargets:
     def test_duplicate_targets_rejected(self):
         """A gate with two target qubits should reject duplicate indices."""
-        gate = get_gate("cx")
+        gate = get_gate("swap")  # swap is arity=2 with no dedicated controls
         with pytest.raises(InstructionError, match="duplicate"):
             Instruction(gate=gate, targets=(QubitRef(0), QubitRef(0)))
 
@@ -99,6 +99,41 @@ class TestDuplicateControls:
 
 
 # --------------------------------------------------------------------------- #
+# Controlled gate num_controls validation
+# --------------------------------------------------------------------------- #
+
+class TestControlledGateValidation:
+    def test_cx_with_correct_control_accepted(self):
+        instr = make_instruction("cx", targets=[1], controls=[0])
+        assert instr.gate.name == "cx"
+        assert len(instr.targets) == 1
+        assert len(instr.controls) == 1
+
+    def test_cx_missing_control_raises(self):
+        """cx requires exactly 1 control qubit."""
+        with pytest.raises(InstructionError, match="control"):
+            make_instruction("cx", targets=[1])  # no control supplied
+
+    def test_cx_wrong_target_count_raises(self):
+        """cx has arity=1; two targets should raise an arity error."""
+        with pytest.raises(InstructionError, match="arity"):
+            # Both indices given as targets – wrong; control should be in controls=
+            Instruction(
+                gate=get_gate("cx"),
+                targets=(QubitRef(0), QubitRef(1)),
+                controls=(),
+            )
+
+    def test_cy_with_correct_control_accepted(self):
+        instr = make_instruction("cy", targets=[1], controls=[0])
+        assert instr.gate.name == "cy"
+
+    def test_cz_with_correct_control_accepted(self):
+        instr = make_instruction("cz", targets=[1], controls=[0])
+        assert instr.gate.name == "cz"
+
+
+# --------------------------------------------------------------------------- #
 # Parameter count validation
 # --------------------------------------------------------------------------- #
 
@@ -111,7 +146,7 @@ class TestParameterCountValidation:
             )
 
     def test_rx_correct_param_count(self):
-        instr = make_instruction("rx", [0], params=[Parameter("theta", value=1.0)])
+        instr = make_instruction("rx", [0], params=[Parameter("angle", value=1.0)])
         assert instr.gate.name == "rx"
 
     def test_rx_missing_param_raises(self):
@@ -122,8 +157,59 @@ class TestParameterCountValidation:
         with pytest.raises(InstructionError, match="parameter"):
             make_instruction(
                 "rx", [0],
-                params=[Parameter("a", value=1.0), Parameter("b", value=2.0)],
+                params=[Parameter("angle", value=1.0), Parameter("b", value=2.0)],
             )
+
+
+# --------------------------------------------------------------------------- #
+# Parameter name validation
+# --------------------------------------------------------------------------- #
+
+class TestParameterNameValidation:
+    def test_rx_canonical_angle_name_accepted(self):
+        instr = make_instruction("rx", [0], params=[Parameter("angle", value=1.0)])
+        assert instr.params[0].name == "angle"
+
+    def test_rx_legacy_theta_normalized_to_angle(self):
+        """Legacy 'theta' param name is normalized to 'angle' for rx."""
+        instr = make_instruction("rx", [0], params=[Parameter("theta", value=1.0)])
+        assert instr.params[0].name == "angle"
+
+    def test_ry_legacy_phi_normalized_to_angle(self):
+        """Legacy 'phi' param name is normalized to 'angle' for ry."""
+        instr = make_instruction("ry", [0], params=[Parameter("phi", value=0.5)])
+        assert instr.params[0].name == "angle"
+
+    def test_rz_legacy_theta_normalized(self):
+        instr = make_instruction("rz", [0], params=[Parameter("theta")])
+        assert instr.params[0].name == "angle"
+
+    def test_phaseshift_canonical_angle_name_accepted(self):
+        instr = make_instruction("phaseshift", [0], params=[Parameter("angle", value=1.0)])
+        assert instr.params[0].name == "angle"
+
+    def test_phaseshift_legacy_theta_normalized(self):
+        instr = make_instruction("phaseshift", [0], params=[Parameter("theta", value=1.0)])
+        assert instr.params[0].name == "angle"
+
+    def test_rx_wrong_name_raises(self):
+        """Non-legacy, wrong param name raises InstructionError."""
+        with pytest.raises(InstructionError, match="parameter"):
+            make_instruction("rx", [0], params=[Parameter("omega", value=1.0)])
+
+    def test_u1q_canonical_param_names_accepted(self):
+        import math
+        norm = 1.0 / math.sqrt(2)
+        instr = make_instruction(
+            "u1q", [0],
+            params=[
+                Parameter("w", value=norm),
+                Parameter("x", value=norm),
+                Parameter("y", value=0.0),
+                Parameter("z", value=0.0),
+            ],
+        )
+        assert [p.name for p in instr.params] == ["w", "x", "y", "z"]
 
 
 # --------------------------------------------------------------------------- #
@@ -135,13 +221,14 @@ class TestGateArityValidation:
         with pytest.raises(InstructionError, match="arity"):
             make_instruction("h", [0, 1])  # h is single-qubit
 
-    def test_cx_correct_arity(self):
-        instr = make_instruction("cx", [0, 1])
-        assert len(instr.targets) == 2
+    def test_cx_correct_target_count(self):
+        instr = make_instruction("cx", targets=[1], controls=[0])
+        assert len(instr.targets) == 1
+        assert len(instr.controls) == 1
 
-    def test_cx_wrong_arity_raises(self):
-        with pytest.raises(InstructionError, match="arity"):
-            make_instruction("cx", [0])  # cx needs 2 targets
+    def test_cx_missing_target_raises(self):
+        with pytest.raises(InstructionError):
+            make_instruction("cx", targets=[], controls=[0])  # 0 targets, cx needs 1
 
 
 # --------------------------------------------------------------------------- #
@@ -152,7 +239,7 @@ class TestValidateCircuit:
     def test_valid_circuit_passes(self):
         c = Circuit(num_qubits=2)
         c.add(make_instruction("h", [0]))
-        c.add(make_instruction("cx", [0, 1]))
+        c.add(make_instruction("cx", targets=[1], controls=[0]))
         validate_circuit(c)  # should not raise
 
     def test_empty_circuit_passes(self):
@@ -189,6 +276,19 @@ class TestClassicalBitValidation:
         c = Circuit(num_qubits=1, num_clbits=1)
         with pytest.raises(CircuitValidationError):
             c.add(make_instruction("measure", [0], clbits=[5]))
+
+    def test_non_measure_gate_with_clbit_raises(self):
+        """Non-measurement gates must not carry classical bit references."""
+        from rqm_circuits.registers import ClassicalBitRef
+        c = Circuit(num_qubits=1, num_clbits=1)
+        gate = get_gate("x")
+        instr = Instruction(
+            gate=gate,
+            targets=(QubitRef(0),),
+            clbits=(ClassicalBitRef(0),),
+        )
+        with pytest.raises(CircuitValidationError, match="classical bit"):
+            c.add(instr)
 
 
 # --------------------------------------------------------------------------- #
@@ -234,27 +334,27 @@ class TestParameterValidation:
             Parameter("   ")
 
     def test_bind(self):
-        p = Parameter("theta")
+        p = Parameter("angle")
         bound = p.bind(1.5)
         assert bound.is_bound
         assert bound.value == pytest.approx(1.5)
 
     def test_as_float_symbolic_raises(self):
-        p = Parameter("phi")
+        p = Parameter("angle")
         with pytest.raises(ValueError, match="symbolic"):
             p.as_float()
 
     def test_equality_numeric_close(self):
-        p1 = Parameter("theta", value=1.5707963267948966)
-        p2 = Parameter("theta", value=1.5707963267948966)
+        p1 = Parameter("angle", value=1.5707963267948966)
+        p2 = Parameter("angle", value=1.5707963267948966)
         assert p1 == p2
 
     def test_inequality_different_names(self):
-        p1 = Parameter("theta", value=1.0)
+        p1 = Parameter("angle", value=1.0)
         p2 = Parameter("phi", value=1.0)
         assert p1 != p2
 
     def test_inequality_different_values(self):
-        p1 = Parameter("theta", value=1.0)
-        p2 = Parameter("theta", value=2.0)
+        p1 = Parameter("angle", value=1.0)
+        p2 = Parameter("angle", value=2.0)
         assert p1 != p2
