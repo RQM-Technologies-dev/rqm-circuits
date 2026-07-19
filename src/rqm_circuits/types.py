@@ -40,6 +40,7 @@ class GateCategory(StrEnum):
     SINGLE_QUBIT = "single_qubit"
     TWO_QUBIT = "two_qubit"
     ROTATION = "rotation"
+    ENTANGLING = "entangling"
     CLIFFORD = "clifford"
     NON_CLIFFORD = "non_clifford"
     MEASUREMENT = "measurement"

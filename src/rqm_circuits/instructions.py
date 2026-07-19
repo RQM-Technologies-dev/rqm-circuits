@@ -28,7 +28,7 @@ from rqm_circuits.registers import ClassicalBitRef, QubitRef
 from rqm_circuits.types import Metadata
 
 # Legacy parameter names that are normalized to the canonical name for
-# single-parameter rotation gates (rx, ry, rz, phaseshift).
+# single-parameter rotation gates (rx, ry, rz, phaseshift, rxx, ryy, rzz).
 _LEGACY_ANGLE_NAMES: frozenset[str] = frozenset({"theta", "phi"})
 
 

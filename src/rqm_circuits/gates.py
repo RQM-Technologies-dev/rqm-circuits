@@ -297,6 +297,31 @@ STANDARD_GATES: dict[str, Gate] = {
         ),
         qf="q = w + xi + yj + zk  (|q| = 1)",
     ),
+    # ----- Standard two-qubit Pauli-pair rotations -----
+    "rxx": _gate(
+        "rxx", 2, num_params=1, param_names=("angle",),
+        cats=[GateCategory.TWO_QUBIT, GateCategory.ROTATION, GateCategory.ENTANGLING],
+        desc=(
+            "XX interaction rotation exp[-i·angle·(X⊗X)/2]. "
+            "The family is entangling-capable; entanglement depends on angle and input state."
+        ),
+    ),
+    "ryy": _gate(
+        "ryy", 2, num_params=1, param_names=("angle",),
+        cats=[GateCategory.TWO_QUBIT, GateCategory.ROTATION, GateCategory.ENTANGLING],
+        desc=(
+            "YY interaction rotation exp[-i·angle·(Y⊗Y)/2]. "
+            "The family is entangling-capable; entanglement depends on angle and input state."
+        ),
+    ),
+    "rzz": _gate(
+        "rzz", 2, num_params=1, param_names=("angle",),
+        cats=[GateCategory.TWO_QUBIT, GateCategory.ROTATION, GateCategory.ENTANGLING],
+        desc=(
+            "ZZ interaction rotation exp[-i·angle·(Z⊗Z)/2]. "
+            "A nonzero angle does not guarantee entanglement for every input state."
+        ),
+    ),
     # ----- Two-qubit entangling gates (symmetric, no controls) -----
     "swap": _gate(
         "swap", 2,
