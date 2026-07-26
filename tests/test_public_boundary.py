@@ -1,7 +1,6 @@
 import pytest
 
-from rqm_circuits import Circuit, CircuitValidationError, validate_circuit
-from rqm_circuits import validate_public_circuit
+from rqm_circuits import Circuit, CircuitValidationError, validate_circuit, validate_public_circuit
 
 
 def _custom_gate_circuit(name: str) -> Circuit:
