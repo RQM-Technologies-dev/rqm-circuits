@@ -65,7 +65,12 @@ from rqm_circuits.registers import ClassicalBitRef, QubitRef
 from rqm_circuits.schema import CIRCUIT_JSON_SCHEMA, CircuitPayload
 from rqm_circuits.serialization import SCHEMA_VERSION
 from rqm_circuits.types import GateCategory
-from rqm_circuits.validators import validate_circuit, validate_instruction
+from rqm_circuits.validators import (
+    INTERNAL_COMPILER_GATES,
+    validate_circuit,
+    validate_instruction,
+    validate_public_circuit,
+)
 
 try:
     __version__ = version("rqm-circuits")
@@ -96,6 +101,8 @@ __all__ = [
     # Validators
     "validate_circuit",
     "validate_instruction",
+    "validate_public_circuit",
+    "INTERNAL_COMPILER_GATES",
     # IR helpers
     "circuit_depth",
     "filter_by_category",

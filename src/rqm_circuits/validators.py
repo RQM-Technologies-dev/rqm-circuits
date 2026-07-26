@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING
 
 from rqm_circuits.errors import CircuitValidationError
 
+INTERNAL_COMPILER_GATES = frozenset({"su4q"})
+
 if TYPE_CHECKING:
     from rqm_circuits.circuit import Circuit
     from rqm_circuits.instructions import Instruction
@@ -105,3 +107,18 @@ def validate_circuit(circuit: Circuit) -> None:
             raise CircuitValidationError(
                 f"Instruction[{idx}] ({instr.gate.name}): {exc}"
             ) from exc
+
+
+def validate_public_circuit(circuit: Circuit) -> None:
+    """Validate an external schema circuit and reject compiler-only gates.
+
+    Custom public gates remain supported.  Only explicitly reserved internal
+    descriptors are rejected at this boundary.
+    """
+    validate_circuit(circuit)
+    for idx, instruction in enumerate(circuit.instructions):
+        if instruction.gate.name.lower() in INTERNAL_COMPILER_GATES:
+            raise CircuitValidationError(
+                f"Instruction[{idx}] uses internal compiler gate "
+                f"{instruction.gate.name!r}; it is not valid in the public circuit schema."
+            )

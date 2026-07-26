@@ -22,7 +22,7 @@ class TestStandardGates:
     EXPECTED_GATES = [
         "i", "x", "y", "z", "h", "s", "t",
         "rx", "ry", "rz", "phaseshift", "u1q",
-        "cx", "cy", "cz", "swap", "iswap",
+        "cx", "cy", "cz", "swap", "iswap", "rxx", "ryy", "rzz",
         "measure", "barrier",
     ]
 
@@ -37,7 +37,7 @@ class TestStandardGates:
 
     def test_symmetric_two_qubit_gates_arity(self):
         """swap and iswap act on 2 target qubits with no dedicated control."""
-        for name in ("swap", "iswap"):
+        for name in ("swap", "iswap", "rxx", "ryy", "rzz"):
             assert STANDARD_GATES[name].arity == 2, f"Gate '{name}' should have arity 2"
 
     def test_controlled_gates_arity_one(self):
@@ -48,13 +48,13 @@ class TestStandardGates:
             assert gate.num_controls == 1, f"Gate '{name}' should have num_controls 1"
 
     def test_rotation_gates_have_one_param(self):
-        for name in ("rx", "ry", "rz", "phaseshift"):
+        for name in ("rx", "ry", "rz", "phaseshift", "rxx", "ryy", "rzz"):
             assert STANDARD_GATES[name].num_params == 1, (
                 f"Gate '{name}' should have 1 parameter"
             )
 
     def test_rotation_gates_canonical_param_name(self):
-        for name in ("rx", "ry", "rz", "phaseshift"):
+        for name in ("rx", "ry", "rz", "phaseshift", "rxx", "ryy", "rzz"):
             gate = STANDARD_GATES[name]
             assert gate.param_names == ("angle",), (
                 f"Gate '{name}' should have param_names=('angle',)"
