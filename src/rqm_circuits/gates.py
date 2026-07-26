@@ -285,7 +285,10 @@ STANDARD_GATES: dict[str, Gate] = {
         "phaseshift", 1, num_params=1, param_names=("angle",),
         cats=[GateCategory.SINGLE_QUBIT, GateCategory.ROTATION],
         desc="Phase-shift gate.  Applies a phase of e^(i·angle) to |1⟩.",
-        qf="q = cos(angle/2) + k·sin(angle/2)  (diagonal phase gate)",
+        qf=(
+            "q = cos(angle/2) + k·sin(angle/2)  "
+            "(Rz(angle), equal to diagonal phase up to global phase)"
+        ),
     ),
     # ----- Universal single-qubit gate (parity with rqm-compiler) -----
     "u1q": _gate(

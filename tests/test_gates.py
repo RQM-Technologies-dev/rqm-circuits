@@ -95,6 +95,13 @@ class TestStandardGates:
                 f"Gate '{name}' should have a quaternion_form annotation"
             )
 
+    def test_quaternion_forms_use_rqm_core_axis_signs(self):
+        assert "cos(angle/2) + i" in STANDARD_GATES["rx"].quaternion_form
+        assert "cos(angle/2) + j" in STANDARD_GATES["ry"].quaternion_form
+        assert "cos(angle/2) + k" in STANDARD_GATES["rz"].quaternion_form
+        assert "(i+k)" in STANDARD_GATES["h"].quaternion_form
+        assert "up to global phase" in STANDARD_GATES["phaseshift"].quaternion_form
+
     def test_non_controlled_gates_have_zero_num_controls(self):
         for name in ("h", "x", "y", "z", "rx", "ry", "rz", "swap", "iswap", "measure"):
             assert STANDARD_GATES[name].num_controls == 0, (

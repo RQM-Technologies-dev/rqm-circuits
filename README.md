@@ -71,6 +71,10 @@ Y         → q = j           (π-rotation about ŷ)
 Z         → q = k           (π-rotation about ẑ)
 ```
 
+`phaseshift(angle)` has matrix `diag(1, exp(i·angle))`; its quaternion metadata
+uses the determinant-one `Rz(angle)` representative, which is equivalent up to
+global phase.
+
 The universal single-qubit gate `u1q` is parameterised directly by the unit
 quaternion components `(w, x, y, z)`:
 
@@ -178,10 +182,10 @@ c = Circuit(num_qubits=1)
 c.add(make_instruction(
     "u1q", targets=[0],
     params=[
-        Parameter("w", value=norm),
+        Parameter("w", value=0.0),
         Parameter("x", value=norm),
         Parameter("y", value=0.0),
-        Parameter("z", value=0.0),
+        Parameter("z", value=norm),
     ],
 ))
 ```
@@ -314,7 +318,7 @@ print(qubit_usage(c))            # {0: [0, 1], 1: [1]}
 | `rxx` | 2 | 0 | 1 | `angle` | Rotation, two-qubit, entangling-capable | `exp[-i angle XX/2]` |
 | `ryy` | 2 | 0 | 1 | `angle` | Rotation, two-qubit, entangling-capable | `exp[-i angle YY/2]` |
 | `rzz` | 2 | 0 | 1 | `angle` | Rotation, two-qubit, entangling-capable | `exp[-i angle ZZ/2]` |
-| `phaseshift` | 1 | 0 | 1 | `angle` | Rotation | `q = cos(angle/2) + k·sin(angle/2)` |
+| `phaseshift` | 1 | 0 | 1 | `angle` | Rotation | `q = cos(angle/2) + k·sin(angle/2)` (up to global phase) |
 | `u1q` | 1 | 0 | 4 | `w,x,y,z` | — | `q = w + xi + yj + zk` |
 | `cx` | 1 | 1 | 0 | — | Clifford | — |
 | `cy` | 1 | 1 | 0 | — | Clifford | — |
