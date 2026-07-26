@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/rqm-circuits)](https://pypi.org/project/rqm-circuits/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/RQM-Technologies-dev/rqm-circuits/actions/workflows/ci.yml/badge.svg)](https://github.com/RQM-Technologies-dev/rqm-circuits/actions/workflows/ci.yml)
 
 ---
@@ -400,4 +400,4 @@ pytest
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE).
