@@ -23,8 +23,8 @@ The table below summarises the schema history:
 +----------+--------------------------------------------------------------+
 | ``0.2``  | Controlled gates use ``arity=1, num_controls=1`` with an     |
 |          | explicit ``controls`` list.  New gates: ``phaseshift``,      |
-|          | ``u1q``.  Rotation gates use canonical ``"angle"``           |
-|          | parameter name.                                              |
+|          | ``u1q``, ``rxx``, ``ryy``, ``rzz``. Rotation gates use       |
+|          | canonical ``"angle"`` parameter names.                       |
 +----------+--------------------------------------------------------------+
 
 ``from_json`` accepts both ``"0.1"`` (legacy) and ``"0.2"`` payloads.

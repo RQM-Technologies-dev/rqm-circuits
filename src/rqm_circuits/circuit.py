@@ -27,7 +27,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from rqm_circuits.errors import CircuitValidationError, SerializationError
-from rqm_circuits.instructions import Instruction
+from rqm_circuits.instructions import Instruction, make_instruction
+from rqm_circuits.params import Parameter
 from rqm_circuits.serialization import SCHEMA_VERSION, from_json, to_json
 from rqm_circuits.types import Metadata
 from rqm_circuits.validators import validate_circuit
@@ -125,6 +126,30 @@ class Circuit:
         for instr in instructions:
             self.add(instr)
         return self
+
+    def rxx(self, angle: float, q0: int, q1: int) -> Circuit:
+        """Append ``exp[-i·angle·(X⊗X)/2]`` on ``(q0, q1)``."""
+        return self.add(
+            make_instruction(
+                "rxx", [q0, q1], params=[Parameter("angle", value=float(angle))]
+            )
+        )
+
+    def ryy(self, angle: float, q0: int, q1: int) -> Circuit:
+        """Append ``exp[-i·angle·(Y⊗Y)/2]`` on ``(q0, q1)``."""
+        return self.add(
+            make_instruction(
+                "ryy", [q0, q1], params=[Parameter("angle", value=float(angle))]
+            )
+        )
+
+    def rzz(self, angle: float, q0: int, q1: int) -> Circuit:
+        """Append ``exp[-i·angle·(Z⊗Z)/2]`` on ``(q0, q1)``."""
+        return self.add(
+            make_instruction(
+                "rzz", [q0, q1], params=[Parameter("angle", value=float(angle))]
+            )
+        )
 
     # ------------------------------------------------------------------ #
     # Copy

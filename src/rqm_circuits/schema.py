@@ -241,9 +241,10 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
                     "type": "string",
                     "minLength": 1,
                     "description": (
-                        "Canonical gate name (e.g. 'h', 'cx', 'rx', 'phaseshift', 'u1q')."
+                        "Canonical gate name (e.g. 'h', 'cx', 'rx', 'rxx', "
+                        "'phaseshift', 'u1q')."
                     ),
-                    "examples": ["h", "cx", "rx", "phaseshift", "u1q"],
+                    "examples": ["h", "cx", "rx", "rxx", "phaseshift", "u1q"],
                 },
                 "arity": {
                     "type": "integer",
@@ -287,6 +288,7 @@ CIRCUIT_JSON_SCHEMA: dict[str, Any] = {
                         "enum": [
                             "clifford",
                             "directive",
+                            "entangling",
                             "measurement",
                             "non_clifford",
                             "rotation",

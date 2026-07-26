@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/rqm-circuits)](https://pypi.org/project/rqm-circuits/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/RQM-Technologies-dev/rqm-circuits/actions/workflows/ci.yml/badge.svg)](https://github.com/RQM-Technologies-dev/rqm-circuits/actions/workflows/ci.yml)
 
 ---
@@ -77,6 +77,19 @@ quaternion components `(w, x, y, z)`:
 ```
 u1q(w, x, y, z) → q = w + xi + yj + zk  (|q| = 1)
 ```
+
+Standard two-qubit interaction rotations use the same half-angle convention:
+
+```python
+c = Circuit(num_qubits=2)
+c.rxx(0.25, 0, 1)
+c.ryy(0.50, 0, 1)
+c.rzz(0.75, 0, 1)
+```
+
+Their matrices are `exp[-i·angle·P/2]` for `P = X⊗X`, `Y⊗Y`, or `Z⊗Z`.
+These families are entangling-capable, but a nonzero angle—especially for
+`rzz`—does not imply that every input state becomes entangled.
 
 ## Better Coordinates for Better Measurement
 
@@ -254,9 +267,11 @@ Example JSON output:
 | Version | Description |
 |---------|-------------|
 | `"0.1"` | Legacy.  Controlled gates encoded as arity-2 with both qubits in `targets`. |
-| `"0.2"` | **Current**.  Controlled gates use `arity=1`, `num_controls=1`, explicit `controls` list.  New gates: `phaseshift`, `u1q`.  Canonical param name `"angle"`. |
+| `"0.2"` | **Current**.  Controlled gates use `arity=1`, `num_controls=1`, explicit `controls` list.  Gates include `phaseshift`, `u1q`, `rxx`, `ryy`, `rzz`. Canonical rotation param name `"angle"`. |
 
 Schema `"0.1"` payloads are accepted on ingestion and transparently normalized.
+Adding the Pauli-pair rotations is backward-compatible, so no existing payload
+shape or accepted schema version changes.
 
 ---
 
@@ -296,6 +311,9 @@ print(qubit_usage(c))            # {0: [0, 1], 1: [1]}
 | `rx` | 1 | 0 | 1 | `angle` | Rotation | `q = cos(angle/2) + i·sin(angle/2)` |
 | `ry` | 1 | 0 | 1 | `angle` | Rotation | `q = cos(angle/2) + j·sin(angle/2)` |
 | `rz` | 1 | 0 | 1 | `angle` | Rotation | `q = cos(angle/2) + k·sin(angle/2)` |
+| `rxx` | 2 | 0 | 1 | `angle` | Rotation, two-qubit, entangling-capable | `exp[-i angle XX/2]` |
+| `ryy` | 2 | 0 | 1 | `angle` | Rotation, two-qubit, entangling-capable | `exp[-i angle YY/2]` |
+| `rzz` | 2 | 0 | 1 | `angle` | Rotation, two-qubit, entangling-capable | `exp[-i angle ZZ/2]` |
 | `phaseshift` | 1 | 0 | 1 | `angle` | Rotation | `q = cos(angle/2) + k·sin(angle/2)` |
 | `u1q` | 1 | 0 | 4 | `w,x,y,z` | — | `q = w + xi + yj + zk` |
 | `cx` | 1 | 1 | 0 | — | Clifford | — |
@@ -311,7 +329,7 @@ print(qubit_usage(c))            # {0: [0, 1], 1: [1]}
 > The legacy encoding (both qubits in `targets`, arity=2) is still accepted on
 > ingestion for schema `"0.1"` backward compatibility.
 
-> **Rotation gates** (`rx`, `ry`, `rz`, `phaseshift`): the canonical parameter
+> **Rotation gates** (`rx`, `ry`, `rz`, `phaseshift`, `rxx`, `ryy`, `rzz`): the canonical parameter
 > name is `"angle"`.  Legacy names `"theta"` and `"phi"` are silently normalized
 > to `"angle"` on ingestion.
 
@@ -382,4 +400,4 @@ pytest
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE).
