@@ -333,21 +333,6 @@ STANDARD_GATES: dict[str, Gate] = {
         cats=[GateCategory.TWO_QUBIT],
         desc="iSWAP gate.  SWAP with an additional i phase factor.",
     ),
-    "rxx": _gate(
-        "rxx", 2, num_params=1, param_names=("angle",),
-        cats=[GateCategory.TWO_QUBIT, GateCategory.ROTATION],
-        desc="Two-qubit Pauli-product rotation exp(-i angle X⊗X / 2).",
-    ),
-    "ryy": _gate(
-        "ryy", 2, num_params=1, param_names=("angle",),
-        cats=[GateCategory.TWO_QUBIT, GateCategory.ROTATION],
-        desc="Two-qubit Pauli-product rotation exp(-i angle Y⊗Y / 2).",
-    ),
-    "rzz": _gate(
-        "rzz", 2, num_params=1, param_names=("angle",),
-        cats=[GateCategory.TWO_QUBIT, GateCategory.ROTATION],
-        desc="Two-qubit Pauli-product rotation exp(-i angle Z⊗Z / 2).",
-    ),
     # ----- Controlled gates -----
     # arity=1 means one TARGET qubit; num_controls=1 means one CONTROL qubit.
     # Instructions for these gates supply controls=[{"index": ctrl}] and
