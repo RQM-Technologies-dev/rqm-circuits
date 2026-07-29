@@ -24,7 +24,7 @@ rqm-circuits   – canonical external circuit IR   ← you are here
 rqm-compiler   – internal optimization / canonicalization engine
 rqm-qiskit     – Qiskit translation/execution bridge
 rqm-braket     – Amazon Braket translation/execution bridge
-rqm-api        – hosted API (accepts rqm-circuits JSON payloads)
+quantum-compiler-api – canonical hosted API (accepts rqm-circuits JSON payloads)
 Studio         – visual circuit editor (emits rqm-circuits JSON payloads)
 ```
 
