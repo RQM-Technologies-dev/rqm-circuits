@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rqm-circuits"
-version = "0.2.1"
+version = "0.2.2"
 description = "Canonical circuit-definition layer for the RQM Technologies quantum software stack"
 readme = "README.md"
 license = { file = "LICENSE" }
