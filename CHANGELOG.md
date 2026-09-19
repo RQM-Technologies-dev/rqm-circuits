@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/RQM-Technologies-dev/rqm-circuits/compare/v0.2.1...v0.2.2) (2026-09-19)
+
+
+### Documentation
+
+* define relational compiler boundary ([b681ada](https://github.com/RQM-Technologies-dev/rqm-circuits/commit/b681ada3c71ea8179c7cde682dc9dd469a326b5b))
+* name the canonical hosted circuit API ([#15](https://github.com/RQM-Technologies-dev/rqm-circuits/issues/15)) ([f252c54](https://github.com/RQM-Technologies-dev/rqm-circuits/commit/f252c54f944d2f4203737a450d6009afae2d7518))
+
 ## [0.2.1](https://github.com/RQM-Technologies-dev/rqm-circuits/compare/v0.2.0...v0.2.1) (2026-07-29)
 
 
