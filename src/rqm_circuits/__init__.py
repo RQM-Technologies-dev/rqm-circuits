@@ -14,7 +14,7 @@ Stack position
     rqm-compiler    – internal optimization / canonicalization engine
     rqm-qiskit      – Qiskit translation/execution bridge
     rqm-braket      – Amazon Braket translation/execution bridge
-    quantum-compiler-api/Studio – canonical hosted API and Studio frontend
+    rqm-api/Studio – canonical hosted API and Studio frontend
 
 Key design principles:
 
